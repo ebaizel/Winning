@@ -80,6 +80,20 @@ contract('Tournament Winning', function(accounts) {
     });
   });
 
+  it("should not allow setting the winner again", function() {
+    return Tournament.deployed().then(function(tournamentInstance) {
+      return tournamentInstance.setWinner(accounts[2], {from: accounts[0]})
+    }).then(function() { assert(false); })
+    .catch(assert);
+  });
+
+  it("should not allow the non-winner to withdraw", function() {
+    return Tournament.deployed().then(function(tournamentInstance) {
+      return tournamentInstance.withdraw({from: accounts[2]})
+    }).then(function() { assert(false); })
+    .catch(assert);
+  });
+
   it("should allow the winner to withdraw", function() {
     return Tournament.deployed().then(function(tournamentInstance) {
       return tournamentInstance.withdraw({from: accounts[1]})
@@ -89,6 +103,14 @@ contract('Tournament Winning', function(accounts) {
       assert.equal(start_balance_1.minus(gas_tx_1).minus(gas_withdraw_tx).minus(WAGER_AMOUNT).plus(WAGER_AMOUNT * 2).toNumber(), balance_winner.toNumber());
     });
   });
+
+  it("should leave a zero balance on the contract", function() {
+    return Tournament.deployed().then(async function(tournamentInstance) {
+      const balance = await web3.eth.getBalance(tournamentInstance.address);
+      assert.equal(balance, 0);
+    });
+  });
+
 });
 
 contract('Tournament Winning Restrictions', function(accounts) {
