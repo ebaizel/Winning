@@ -12,8 +12,8 @@ contract Tournament {
   event SubmittedEntry(address entrant, string ipfsHash);
   event PaidWinner(address winner, uint amount);
 
-  // This is ~$10 when ETH is ~$430 USD.
-  uint constant WAGER_AMOUNT_WEI = 23273675146042310;
+  // This is ~$10 when ETH is ~$450 USD.
+  uint constant WAGER_AMOUNT_WEI = 25000000000000000;
 
   address owner;
   mapping (address => Entry) public entries;
