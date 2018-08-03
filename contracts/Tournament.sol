@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
+import "installed_contracts/oraclize-api/contracts/usingOraclize.sol";
 
-contract Tournament {
+contract Tournament is usingOraclize {
 
   struct Entry {
     string ipfsHash;
@@ -11,6 +12,8 @@ contract Tournament {
 
   event SubmittedEntry(address entrant, string ipfsHash);
   event PaidWinner(address winner, uint amount);
+  event ReceivedOraclizeResult(string result);
+  event LogNewOraclizeQuery(string description);
 
   // This is ~$10 when ETH is ~$450 USD.
   uint constant WAGER_AMOUNT_WEI = 25000000000000000;
@@ -20,6 +23,8 @@ contract Tournament {
   address public winner;
   uint public numEntries;
   uint public poolValueWei;  // total wei wagered
+  string public winningTeam;
+  string public oracleURL;
 
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -36,8 +41,12 @@ contract Tournament {
     _;
   }
 
-  constructor() public {
+  constructor(string _url) public {
+    assert(bytes(_url).length > 0);
+    // When running tests or running locally, set the OAR here
+    // OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     owner = msg.sender;
+    oracleURL = _url;
   }
 
   function submitEntry(string ipfsHash, string name) public payable hasSufficientFunds {
@@ -61,4 +70,21 @@ contract Tournament {
     msg.sender.transfer(winnings);
     emit PaidWinner(msg.sender, winnings);
   }
+
+  function __callback(bytes32 myid, string result) public {
+    if (msg.sender != oraclize_cbAddress()) revert();
+
+    emit ReceivedOraclizeResult(result);
+    winningTeam = result;
+  }
+
+  function updateResults() public {
+    if (oraclize_getPrice("URL") > this.balance) {
+      emit LogNewOraclizeQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
+    } else {
+      emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
+      oraclize_query("URL", oracleURL);
+    }
+  }
+
 }
