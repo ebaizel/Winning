@@ -1,14 +1,8 @@
 pragma solidity ^0.4.24;
 import "installed_contracts/oraclize-api/contracts/usingOraclize.sol";
+import "installed_contracts/jsmnsol-lib/contracts/JsmnSolLib.sol";
 
 contract Tournament is usingOraclize {
-
-  struct Entry {
-    string ipfsHash;
-    string name;
-  }
-
-  enum TOURNAMENT_STATE { Created, Completed }
 
   event SubmittedEntry(address entrant, string ipfsHash);
   event PaidWinner(address winner, uint amount);
@@ -19,72 +13,144 @@ contract Tournament is usingOraclize {
   uint constant WAGER_AMOUNT_WEI = 25000000000000000;
 
   address owner;
-  mapping (address => Entry) public entries;
-  address public winner;
-  uint public numEntries;
-  uint public poolValueWei;  // total wei wagered
-  string public winningTeam;
-  string public oracleURL;
+  string oracleURL;
+
+  bool public isLocked = false;
+  bool public isCompleted = false;
+  bool public isWinnerPaid = false;
+
+  uint public weiWeigered;
+
+  address public homePicker;  // chose the home team
+  address public awayPicker;  // chose the away team
+
+  uint public homeTeamScore;  // home team points
+  uint public awayTeamScore;  // away team points
 
   modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-  modifier isWinner() {
-    require(msg.sender == winner);
+    require(msg.sender == owner, "User is not the contract owner.");
     _;
   }
 
   modifier hasSufficientFunds() {
-    require(msg.value >= WAGER_AMOUNT_WEI);
+    require(msg.value >= WAGER_AMOUNT_WEI, "Insufficient funds sent.");
     _;
   }
 
-  constructor(string _url) public {
+  modifier winnerUnpaid() {
+    require(!isWinnerPaid, "Winner has already been paid.");
+    _;
+  }
+
+  constructor(string _url) payable public {
     assert(bytes(_url).length > 0);
-    // When running tests or running locally, set the OAR here
-    // OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+    // READ: When running tests or running locally, deploy ethereum bridge
+    // and set the OAR here
+    // OAR = OraclizeAddrResolverI(0x75fadd23583c9af627935dab837e9df0ecf69c48);
     owner = msg.sender;
     oracleURL = _url;
   }
 
-  function submitEntry(string ipfsHash, string name) public payable hasSufficientFunds {
-    entries[msg.sender] = Entry(ipfsHash, name);
-    poolValueWei += msg.value;
-    numEntries++;
+  function submitEntry(bool isHome) public payable hasSufficientFunds {
+    require(!isLocked, "Contract is locked.");
+
+    if (isHome) {
+      require(homePicker == address(0), "Home team has already been chosen.");
+      homePicker = msg.sender;
+    } else {
+      require(awayPicker == address(0), "Away team has already been chosen.");
+      awayPicker = msg.sender;
+    }
+
+    weiWeigered += msg.value;
+
+    if ((homePicker != address(0)) && (awayPicker != address(0))) {
+      isLocked = true;
+    }
   }
 
-  function setWinner(address _winner) public onlyOwner {
-    require(winner == address(0));
-    winner = _winner;
-  }
-
-  function getWinner() public view returns (address, string) {
-    require(winner != address(0));
-    return(winner, entries[winner].name);
-  }
-
-  function withdraw() public isWinner {
+  function withdraw() public {
+    require(isCompleted || (!isCompleted && !isLocked), "Contract is locked or has not yet completed.");
     uint winnings = address(this).balance;
     msg.sender.transfer(winnings);
     emit PaidWinner(msg.sender, winnings);
   }
 
-  function __callback(bytes32 myid, string result) public {
+  function compareStrings (string a, string b) internal pure returns (bool){
+    return keccak256(a) == keccak256(b);
+  }
+
+  function __callback(bytes32 myid, string result) winnerUnpaid public {
     if (msg.sender != oraclize_cbAddress()) revert();
 
     emit ReceivedOraclizeResult(result);
-    winningTeam = result;
+
+    // Parse the oraclize query results
+    // https://medium.com/maibornwolff/a-json-parser-for-solidity-9cc73b4b42
+    uint returnValue;
+    JsmnSolLib.Token[] memory tokens;
+    uint actualNum;
+
+    (returnValue, tokens, actualNum) = JsmnSolLib.parse(result, 5);
+
+    // First, make sure the game is not still being played
+    JsmnSolLib.Token memory token = tokens[1];
+    string memory currentIntermission = JsmnSolLib.getBytes(result, token.start, token.end);
+
+    token = tokens[2];
+    string memory currentQuarter = JsmnSolLib.getBytes(result, token.start, token.end);
+
+    if (!compareStrings(currentIntermission, "null") || !compareStrings(currentQuarter, "null")) {
+      revert("Game is still in progress.");
+    } else {
+      isCompleted = true;
+    }
+
+    // Second, get the team's scores and make sure they're not empty
+    token = tokens[3];
+    string memory awayScoreStr = JsmnSolLib.getBytes(result, token.start, token.end);
+
+    token = tokens[4];
+    string memory homeScoreStr = JsmnSolLib.getBytes(result, token.start, token.end);
+
+    if(compareStrings(awayScoreStr, "null") || compareStrings(homeScoreStr, "null")) {
+      revert("Game has not started.");
+    } else {
+      awayTeamScore = parseInt(awayScoreStr);
+      homeTeamScore = parseInt(homeScoreStr);
+    }
+
+    // Transfer the contract's balance to the winner;
+    // divide across both in the event of a tie
+    uint winnings = weiWeigered;
+    if (awayTeamScore > homeTeamScore) {
+      // transfer to the awayPicker
+      awayPicker.transfer(winnings);
+      emit PaidWinner(awayPicker, winnings);
+    } else if (awayTeamScore < homeTeamScore) {
+      // transfer to the homePicker
+      homePicker.transfer(winnings);
+      emit PaidWinner(homePicker, winnings);
+    } else {
+      // transfer to both
+      uint payout = winnings / 2;
+      awayPicker.transfer(payout);
+      homePicker.transfer(payout);
+      emit PaidWinner(awayPicker, payout);
+      emit PaidWinner(homePicker, payout);
+    }
+    isWinnerPaid = true;
   }
 
-  function updateResults() public {
-    if (oraclize_getPrice("URL") > this.balance) {
+  function updateResults() public onlyOwner winnerUnpaid {
+    if (oraclize_getPrice("URL") > address(this).balance) {
       emit LogNewOraclizeQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
     } else {
       emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-      oraclize_query("URL", oracleURL);
+      oraclize_query("URL", oracleURL, 150000);
     }
   }
+
+  function() public payable {}
 
 }
