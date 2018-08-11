@@ -8,9 +8,10 @@ contract Tournament is usingOraclize {
   event PaidWinner(address winner, uint amount);
   event ReceivedOraclizeResult(string result);
   event LogNewOraclizeQuery(string description);
+  event TeamSelected(address picker, string message);
 
   // This is ~$10 when ETH is ~$450 USD.
-  uint constant WAGER_AMOUNT_WEI = 25000000000000000;
+  //uint constant WAGER_AMOUNT_WEI = 25000000000000000;
 
   address owner;
   string oracleURL;
@@ -20,6 +21,7 @@ contract Tournament is usingOraclize {
   bool public isWinnerPaid = false;
 
   uint public weiWeigered;
+  uint public wagerAmount;
 
   address public homePicker;  // chose the home team
   address public awayPicker;  // chose the away team
@@ -33,7 +35,7 @@ contract Tournament is usingOraclize {
   }
 
   modifier hasSufficientFunds() {
-    require(msg.value >= WAGER_AMOUNT_WEI, "Insufficient funds sent.");
+    require(msg.value >= wagerAmount, "Insufficient funds sent.");
     _;
   }
 
@@ -42,39 +44,48 @@ contract Tournament is usingOraclize {
     _;
   }
 
-  constructor(string _url) payable public {
+  constructor(string _url, bool isHome) payable public {
     assert(bytes(_url).length > 0);
+    assert(msg.value > 0);
+
     // READ: When running tests or running locally, deploy ethereum bridge
     // and set the OAR here
-    // OAR = OraclizeAddrResolverI(0x75fadd23583c9af627935dab837e9df0ecf69c48);
+    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     owner = msg.sender;
     oracleURL = _url;
+
+    _logEntry(isHome);
+    wagerAmount = msg.value;
+
+  }
+
+  function _logEntry(bool isHome) internal {
+    if (isHome) {
+      require(homePicker == address(0), "Home team has already been chosen.");
+      homePicker = msg.sender;
+      emit TeamSelected(msg.sender, "Home");
+    } else {
+      require(awayPicker == address(0), "Away team has already been chosen.");
+      awayPicker = msg.sender;
+      emit TeamSelected(msg.sender, "Away"); 
+    }
+    weiWeigered += msg.value;
   }
 
   function submitEntry(bool isHome) public payable hasSufficientFunds {
     require(!isLocked, "Contract is locked.");
-
-    if (isHome) {
-      require(homePicker == address(0), "Home team has already been chosen.");
-      homePicker = msg.sender;
-    } else {
-      require(awayPicker == address(0), "Away team has already been chosen.");
-      awayPicker = msg.sender;
-    }
-
-    weiWeigered += msg.value;
-
+    _logEntry(isHome);
     if ((homePicker != address(0)) && (awayPicker != address(0))) {
       isLocked = true;
     }
   }
 
-  function withdraw() public {
-    require(isCompleted || (!isCompleted && !isLocked), "Contract is locked or has not yet completed.");
-    uint winnings = address(this).balance;
-    msg.sender.transfer(winnings);
-    emit PaidWinner(msg.sender, winnings);
-  }
+  // function withdraw() public {
+  //   require(isCompleted || (!isCompleted && !isLocked), "Contract is locked or has not yet completed.");
+  //   uint winnings = address(this).balance;
+  //   msg.sender.transfer(winnings);
+  //   emit PaidWinner(msg.sender, winnings);
+  // }
 
   function compareStrings (string a, string b) internal pure returns (bool){
     return keccak256(a) == keccak256(b);
@@ -129,8 +140,10 @@ contract Tournament is usingOraclize {
       emit PaidWinner(awayPicker, winnings);
     } else if (awayTeamScore < homeTeamScore) {
       // transfer to the homePicker
+      emit PaidWinner(homePicker, this.balance);
       homePicker.transfer(winnings);
       emit PaidWinner(homePicker, winnings);
+      emit PaidWinner(homePicker, this.balance);
     } else {
       // transfer to both
       uint payout = winnings / 2;

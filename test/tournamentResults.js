@@ -12,7 +12,7 @@ contract('Tournament Result: completed', function(accounts) {
   
   // Since we need to send constructor parameters, we can't use the migration-deployed instance; create the contract here instead
   beforeEach("create test contract", async function() {
-    tournamentInstance = await Tournament.new(oracleURL, {value: web3.toWei(1, 'ether')});
+    tournamentInstance = await Tournament.new(oracleURL, true, {value: web3.toWei(1, 'ether')});
   });
 
   it("should payout the winner", async function() {
