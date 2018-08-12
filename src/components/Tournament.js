@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React from 'react'
 import TournamentContract from '../../build/contracts/Tournament.json'
 import getWeb3 from '../utils/getWeb3'
 
@@ -13,7 +13,7 @@ import getWeb3 from '../utils/getWeb3'
 //   return (gasPrice * txReceipt.gasUsed);
 // }
 
-class Tournament extends Component {
+class Tournament extends React.Component {
   constructor(props) {
     super(props)
 
