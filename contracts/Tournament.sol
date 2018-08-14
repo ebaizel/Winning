@@ -29,6 +29,9 @@ contract Tournament is usingOraclize {
   uint public homeTeamScore;  // home team points
   uint public awayTeamScore;  // away team points
 
+  string public homeTeamName; // can set these as events to reduce storage and save $$
+  string public awayTeamName;
+
   modifier onlyOwner() {
     require(msg.sender == owner, "User is not the contract owner.");
     _;
@@ -44,7 +47,7 @@ contract Tournament is usingOraclize {
     _;
   }
 
-  constructor(string _url, bool isHome) payable public {
+  constructor(string _url, bool isHome, string _homeTeamName, string _awayTeamName) payable public {
     assert(bytes(_url).length > 0);
     assert(msg.value > 0);
 
@@ -56,6 +59,9 @@ contract Tournament is usingOraclize {
 
     _logEntry(isHome);
     wagerAmount = msg.value;
+
+    homeTeamName = _homeTeamName;
+    awayTeamName = _awayTeamName;
 
   }
 

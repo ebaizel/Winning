@@ -26,9 +26,17 @@ class Home extends React.Component {
         <main className="container">
           <div className="pure-g">
             <div className="pure-u-1-1">
+            <table><tbody>
             {this.state.games.map(function(props, index) {
-              return <GameCard {...props} key={index}/>
+              return(
+                <tr key={index}>
+                  <td>
+                    <GameCard {...props} key={index}/>
+                  </td>
+                </tr>)
             })}
+            </tbody>
+            </table>
             </div>
           </div>
         </main>

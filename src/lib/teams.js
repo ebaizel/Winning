@@ -1,26 +1,20 @@
-const teams = {
-  "DET":  {
-    fullName: "Detroit Lions",
-    city: "Detroit",
-    name: "Lions",
-    teamCode: "DET"
-  }, "GB" : {
-    fullName: "Green Bay Packers",
-    city: "Green Bay",
-    name: "Packers",
-    teamCode: "GB"
-  }, "NYG": {
-    fullName: "New York Giants",
-    city: "New York",
-    name: "Giants",
-    teamCode: "NYG"
-  }, "PHI": {
-    fullName: "Philadelphia Eagles",
-    city: "Philadelphia",
-    name: "Eagles",
-    teamCode: "PHI"
+import teamsJSON from "./team-raw.json";
 
-  }
+let teams = {};
+
+function init() {
+  teamsJSON.map(team => {
+    teams[team.abr] = {
+      fullName: team.city + " " + team.name,
+      city: team.city,
+      name: team.name,
+      teamCode: team.abr,
+      conf: team.conf,
+      div: team.div
+    }
+  })
 }
+
+init()
 
 export default teams

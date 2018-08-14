@@ -1,17 +1,23 @@
-let gamesByDate =
-{
-  "2018-10-02": [{home: "DET", away:"GB"}, {home:"NYG", away:"PHI"}],
-  "2018-10-03": [{home: "SF", "away":"SEA"}, {home: "AZ", away: "LAR"}]
-}
+// let games =
+// {
+//   "2018-10-07": [{home: "DET", away:"GB"}, {home:"NYG", away:"PHI"}],
+//   "2018-10-03": [{home: "SF", "away":"SEA"}, {home: "AZ", away: "LAR"}]
+// }
+
+import moment from 'moment-timezone';
+import {games as gamesJSON} from "./2018-schedule-raw.json";
+
+let games = {};
 
 function getGamesForDate(gameDate) {
-  return gamesByDate[gameDate];
+  return games[gameDate];
 }
 
 function getGames(startDate, endDate) {
   if (startDate === undefined) {
     //TODO: return today's
-    return getGamesForDate("2018-10-02");
+    const defaultDate = "2018-09-09"
+    return getGamesForDate(moment(defaultDate).tz("America/New_York").format("YYYY-MM-DD"));
   }
   if (endDate === undefined) {
     return getGamesForDate(startDate);
@@ -21,13 +27,19 @@ function getGames(startDate, endDate) {
 }
 
 function init() {
-  // Add the eventDate to the game
-  Object.entries(gamesByDate).map(function(gameDate) {
-    const eventDate = gameDate[0];
-    return gameDate[1].map(game => {
-      return Object.assign(game, {gameDate: eventDate});
-    });
-  });
+  gamesJSON.map(game => {
+    let awayTeamCode = game.schedule.awayTeam.abbreviation;
+    let homeTeamCode = game.schedule.homeTeam.abbreviation;
+    let startTime = game.schedule.startTime;
+    startTime = moment(startTime).tz("America/New_York").format("YYYY-MM-DD"); // CONVERT TO EST
+    games[startTime] = games[startTime] || [];
+    const data = {
+      awayTeamCode,
+      homeTeamCode,
+      gameDate: startTime
+    }
+    return games[startTime].push(data);
+  })
 
   return {
     getGames,

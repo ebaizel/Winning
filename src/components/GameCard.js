@@ -7,8 +7,10 @@ class GameCard extends React.Component {
 
   constructor(props) {
     super(props);
-    let homeTeam = Teams[props.home];
-    let awayTeam = Teams[props.away];
+
+    let homeTeam = Teams[props.homeTeamCode];
+    let awayTeam = Teams[props.awayTeamCode];
+
     this.state = {
       homeTeam: homeTeam,
       awayTeam: awayTeam,
@@ -31,19 +33,18 @@ class GameCard extends React.Component {
 
   render() {
     return( 
-      <div>
-        <p>Home</p>
-        <p>{this.state.homeTeam.fullName}</p>
-        <p>Away</p>
-        <p>{this.state.awayTeam.fullName}</p>
-        <p>Home Score</p>
-        <p>{this.state.gameResult.homeScore}</p>
-        <p>Away Score</p>
-        <p>{this.state.gameResult.awayScore}</p>
-        <p>Game Status</p>
-        <p>{this.state.gameStatus}</p>
-        <Link className="table-link" to={"/start?home=" + this.state.homeTeam.teamCode + "&away=" + this.state.awayTeam.teamCode + "&date=" + this.state.gameDate}>Bet on me!</Link>
-      </div>)
+      <table><tbody>
+        <tr>
+          <td>{this.state.homeTeam.fullName}</td>
+          <td>{this.state.awayTeam.fullName}</td>
+          <td>{this.state.gameResult.homeScore}</td>
+          <td>{this.state.gameResult.awayScore}</td>
+          <td>{this.state.gameStatus}</td>
+          <td><Link className="table-link" to={"/tournament?home=" + this.state.homeTeam.teamCode + "&away=" + this.state.awayTeam.teamCode + "&date=" + this.state.gameDate}>Bet on me!</Link></td>
+        </tr>
+      </tbody>
+      </table>
+    )
   }
 }
 

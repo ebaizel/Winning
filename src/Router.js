@@ -7,7 +7,8 @@ const Routing = () => (
   <BrowserRouter>
   <div>
     <Switch>
-      <Route path="/:tournamentAddress" component={Tournament}/>
+      <Route path="/tournament/:tournamentAddress" component={Tournament}/>
+      <Route path="/tournament" component={Tournament}/>
       <Route path="/" component={Home}/>
     </Switch>
   </div>
