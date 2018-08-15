@@ -1,20 +1,11 @@
 import React from 'react';
 import moment from 'moment-timezone';
+import queryString from 'query-string';
+
 import TournamentContract from '../../build/contracts/Tournament.json';
 import getWeb3 from '../utils/getWeb3';
-import queryString from 'query-string';
 import Teams from "../lib/teams";
-
-// async function getTxGasConsumption(web3, transactionHash) {
-//   const transaction = await web3.eth.getTransaction(transactionHash);
-//   const txReceipt = await web3.eth.getTransactionReceipt(transactionHash); // contains the actual gas consumed
-//   console.log("transaction is ", transaction);
-//   console.log("txreciept is ", txReceipt);
-  
-//   const gasPrice = transaction.gasPrice;
-//   console.log("gas price is ", gasPrice);
-//   return (gasPrice * txReceipt.gasUsed);
-// }
+import getCoinPrice from "../lib/coinPrice";
 
 class Tournament extends React.Component {
   constructor(props) {
@@ -33,11 +24,13 @@ class Tournament extends React.Component {
       isCompleted: false,
       isLocked: false,
       isWinnerPaid: false,
-      wagerUSD: 1,
+      wagerUSD: 10,
       mySportsFeedUser: "6f66a3d1-4b1e-4858-a1e6-6dd748",
       mySportsFeedPassword: "MYSPORTSFEEDS",
       awayScore: 0,
-      homeScore: 0
+      homeScore: 0,
+      awayTeam: {},
+      homeTeam: {}
     }
 
     this.checkForWinner = this.checkForWinner.bind(this);
@@ -49,51 +42,54 @@ class Tournament extends React.Component {
     let myapiURL = "https://api.mysportsfeeds.com/v2.0/pull/nfl/2018-2019-regular/games.json?team=__team__&date=__date__";
     gameDate = gameDate.replace(/-/g, ''); //convert 2018-09-10 to 20180910
     myapiURL = myapiURL.replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate);
+    
+    //myapiURL = "https://api.mysportsfeeds.com/v2.0/pull/nfl/2017-2018-regular/games.json?team=det&date=20171231";
     return myapiURL;
   }
 
   generateMySportsFeedURL(homeTeam, gameDate) {
     let myapiURL = "https://__username__:__password__@api.mysportsfeeds.com/v2.0/pull/nfl/2018-2019-regular/games.json?team=__team__&date=__date__";
-    gameDate = gameDate.replace(/-/, ''); //convert 2018-09-10 to 20180910
-    myapiURL = myapiURL.replace("__username__", this.props.mySportsFeedUser).replace("__password__",this.props.mySportsFeedPassword).replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate);
+    gameDate = gameDate.replace(/-/g, ''); //convert 2018-09-10 to 20180910
+    myapiURL = myapiURL.replace("__username__", this.state.mySportsFeedUser).replace("__password__",this.state.mySportsFeedPassword).replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate);
     return myapiURL;
   }
 
   generateOracleURL() {
-    // "json(https://6f66a3d1-4b1e-4858-a1e6-6dd748:MYSPORTSFEEDS@api.mysportsfeeds.com/v2.0/pull/nfl/2017-2018-regular/games.json?team=det&date=20171231).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]"
     let mySportsFeedURL = this.generateMySportsFeedURL(this.state.homeTeam, this.state.gameDate);
     let oracleURL = "json(__mysportsfeedurl__).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]";
     oracleURL = oracleURL.replace("__mysportsfeedurl__", mySportsFeedURL);
-    console.log("oracle url is ", oracleURL);
+
+    // const testURL = "json(https://6f66a3d1-4b1e-4858-a1e6-6dd748:MYSPORTSFEEDS@api.mysportsfeeds.com/v2.0/pull/nfl/2017-2018-regular/games.json?team=det&date=20171231).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]";
+    // return testURL;
     return oracleURL;
   }
 
   componentWillMount() {  
     getWeb3.then(async results => {
+
+      const ETHUSDPrice = await getCoinPrice();
+
       this.setState({
-        web3: results.web3
+        web3: results.web3,
+        ETHUSDPrice
       })
 
       if (this.state.tournamentAddress != null) {
-        return this.getTournamentState()
+        await this.getTournamentState();
+        await this.getRealWorldGameState(this.state.homeTeam, this.state.gameDate);
       } else {
-        // set the properties into the state
+
         const queryParams = this.state.queryParams;
         const homeTeam = Teams[queryParams.home];
         const awayTeam = Teams[queryParams.away];
         const gameDate = queryParams.date;
 
-        const realWorldGameState = await this.getRealWorldGameState(homeTeam, gameDate);
+        await this.getRealWorldGameState(homeTeam, gameDate);
 
         this.setState({
           homeTeam,
           awayTeam,
           gameDate,
-          homeTeamName: homeTeam.fullName,
-          awayTeamName: awayTeam.fullName,
-          isCompleted: realWorldGameState.isCompleted,
-          awayScore: realWorldGameState.awayScore,
-          homeScore: realWorldGameState.homeScore
         });
       }
     })
@@ -104,6 +100,7 @@ class Tournament extends React.Component {
 
   async getRealWorldGameState(homeTeam, gameDate) {
     const mySportsFeedURL = this.generateMySportsFeedURLWithoutCreds(homeTeam, gameDate);
+    // const mySportsFeedURL = this.generateMySportsFeedURLWithoutCreds({teamCode:"det"}, "20171231");
     let headers = new Headers();
     headers.append('Authorization', 'Basic ' + btoa(this.state.mySportsFeedUser + ':' + this.state.mySportsFeedPassword));
     
@@ -123,11 +120,11 @@ class Tournament extends React.Component {
       let awayScore = isCompleted ? score.awayScoreTotal : 0;
       let homeScore = isCompleted ? score.homeScoreTotal : 0;
 
-      return {
+      this.setState({
         isCompleted,
         awayScore,
         homeScore
-      }
+      });
     });
   }
 
@@ -143,27 +140,30 @@ class Tournament extends React.Component {
     const awayPicker = await tournamentInstance.methods.awayPicker().call();
     const wagerWei = await tournamentInstance.methods.wagerAmount().call();
     const homePicker = await tournamentInstance.methods.homePicker().call();
-    const isCompleted = await tournamentInstance.methods.isCompleted().call();
     const isWinnerPaid = await tournamentInstance.methods.isWinnerPaid().call();
     const isLocked = await tournamentInstance.methods.isLocked().call();
-    const homeTeamName = await tournamentInstance.methods.homeTeam().call();
-    const awayTeamName = await tournamentInstance.methods.awayTeam().call();
+    const homeTeamCode = await tournamentInstance.methods.homeTeamCode().call();
+    const awayTeamCode = await tournamentInstance.methods.awayTeamCode().call();
+    const gameDateTimestamp = await tournamentInstance.methods.gameDate().call();
 
     let stateParams = {
       homePicker,
       awayPicker,
       wagerWei,
       isWinnerPaid,
-      isCompleted,
       isLocked,
-      homeTeamName,
-      awayTeamName
+      homeTeam: Teams[homeTeamCode],
+      awayTeam: Teams[awayTeamCode],
+      gameDate: this.convertUnixTimestampToGameDate(gameDateTimestamp)
     }
     if (wagerWei > 0) {
       stateParams.wagerUSD = this.convertWagerWeiToUSD(wagerWei);
     }
     this.setState(stateParams);
+  }
 
+  convertUnixTimestampToGameDate(gameDateTimestamp) {
+    return moment.unix(gameDateTimestamp).tz("America/New_York").format("YYYY-MM-DD")
   }
 
   async createTournament(params) {
@@ -173,8 +173,7 @@ class Tournament extends React.Component {
     
     const account = await this.getCurrentAccount();
     const oracleURL = this.generateOracleURL();
-    let instance = await tournament.new(oracleURL, params.isHome, this.state.homeTeam.fullName, this.state.awayTeam.fullName, {from: account, value: params.wager});
-
+    let instance = await tournament.new(oracleURL, params.isHome, this.state.homeTeam.teamCode, this.state.awayTeam.teamCode, moment(this.state.gameDate).format("X"), {from: account, value: params.wager});
     this.setState({tournamentAddress: instance.address});
     return instance;
   }
@@ -183,6 +182,7 @@ class Tournament extends React.Component {
     const wagerInWei = this.getWagerInWei();
     if (this.state.tournamentAddress == null) {
       await this.createTournament({isHome, wager: wagerInWei});
+      this.props.history.push("/tournament/" + this.state.tournamentAddress);
     } else {
       let tournamentInstance = this.getTournamentInstance();
       let account = await this.getCurrentAccount();
@@ -205,15 +205,15 @@ class Tournament extends React.Component {
   }
 
   getWagerInEth() {
-    return (this.state.wagerUSD / 350);
+    return (this.state.wagerUSD / this.state.ETHUSDPrice).toPrecision(4);
   }
 
   getWagerInWei() {
-    return this.state.web3.utils.toWei((this.state.wagerUSD / 350).toString(), "ether");
+    return this.state.web3.utils.toWei((this.state.wagerUSD / this.state.ETHUSDPrice).toString(), "ether");
   }
 
   convertWagerWeiToUSD(wager) {
-    return (this.state.web3.utils.fromWei(wager, "ether") * 350);
+    return (this.state.web3.utils.fromWei(wager, "ether") * this.state.ETHUSDPrice);
   }
 
   isHomePickAvailable() {
@@ -229,13 +229,18 @@ class Tournament extends React.Component {
   }
 
   canCheckForWinner() {
-    return this.state.isLocked && !this.state.isCompleted && !this.state.isWinnerPaid
+    return this.state.isLocked && this.state.isCompleted && !this.state.isWinnerPaid
   }
 
-  async checkForWinner() {
+  async checkForWinner(e) {
+    e.preventDefault();
     let account = await this.getCurrentAccount();
     let tournamentInstance = this.getTournamentInstance();
     await tournamentInstance.methods.updateResults().send({from: account});
+  }
+
+  getTournamentShareURL() {
+    return window.location.protocol + "//" + window.location.host + "/tournament/" + this.state.tournamentAddress;
   }
 
   render() {
@@ -248,24 +253,45 @@ class Tournament extends React.Component {
         <main className="container">
           <div className="pure-g">
             <div className="pure-u-1-1">
-              <h1>{this.state.homeTeamName} (HOME) vs {this.state.awayTeamName} (AWAY)</h1>
+              <h1>{this.state.awayTeam.fullName} (AWAY) at {this.state.homeTeam.fullName} (HOME)</h1>
               <h3>{moment(this.state.gameDate).format("MMMM Do, YYYY")}</h3>
               <br/>
-              <p>Pick one of the teams and set a wager.</p>
+              <p>Set a wager amount.  Bet on one of the teams.  Send the resulting address to a friend.</p>
               
               <form>
                 <label>Wager (USD)
-                  <input style={{width: "60px", "textAlign": "center"}} type="text" value={this.state.wagerUSD} disabled={!this.canSetWager()} onChange={this.handleWagerChange}/><span>{this.getWagerInEth()} Ether</span>
+                  <input className="wager" style={{width: "60px", "textAlign": "center"}} type="text" value={this.state.wagerUSD.toPrecision(4)} disabled={!this.canSetWager()} onChange={this.handleWagerChange}/><span>{this.getWagerInEth()} Ether</span>
                 </label>
                 <br/>
-                <button disabled={!this.isHomePickAvailable()} onClick={(e) => {e.preventDefault(); this.submitPick(true)}}>Bet on the {this.state.homeTeamName}</button>
-                <button disabled={!this.isAwayPickAvailable()} onClick={(e) => {e.preventDefault(); this.submitPick(false)}}>Bet on the {this.state.awayTeamName}</button>
-                <br/><br/><br/>
-                <button style={{backgroundColor: "green", color: "white"}} disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button>
+
+                {this.isAwayPickAvailable()
+                ? <button className="button-bet" disabled={!this.isAwayPickAvailable()} onClick={(e) => {e.preventDefault(); this.submitPick(false)}}>Bet on the {this.state.awayTeam.fullName}</button>
+                : null
+                }
+
+                {this.isHomePickAvailable()
+                ? <button className="button-bet" disabled={!this.isHomePickAvailable()} onClick={(e) => {e.preventDefault(); this.submitPick(true)}}>Bet on the {this.state.homeTeam.fullName}</button>
+                : null
+                }
                 <br/><br/><br/>
 
-                <p>Instructions</p>
-                <p>...</p>
+                {this.canCheckForWinner()
+                ? <button className="check-for-winner" disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button>
+                : null
+                }
+
+                {!!this.state.tournamentAddress
+                ? [<p key="0" className="share-tournament-text">Save this link! It's how you reference this wager.</p>,
+                <p key="1" className="share-tournament-url">{this.getTournamentShareURL()}</p>]
+                : null
+                }
+
+                <br/><br/><br/>
+
+                <p><b>Instructions</b></p>
+                <p>If you're creating a new bet, make sure you keep the resulting url.  Share that with a friend.</p>
+                <p>If you're taking the other side of a bet, bet on the other team.</p>
+                <p>After the game has ended, a button will appear that validates the score and pays the winner.</p>
                 <br/><br/><br/>
 
                 <p>Contract Info</p>

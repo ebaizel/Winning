@@ -33,17 +33,10 @@ class GameCard extends React.Component {
 
   render() {
     return( 
-      <table><tbody>
-        <tr>
-          <td>{this.state.homeTeam.fullName}</td>
-          <td>{this.state.awayTeam.fullName}</td>
-          <td>{this.state.gameResult.homeScore}</td>
-          <td>{this.state.gameResult.awayScore}</td>
-          <td>{this.state.gameStatus}</td>
-          <td><Link className="table-link" to={"/tournament?home=" + this.state.homeTeam.teamCode + "&away=" + this.state.awayTeam.teamCode + "&date=" + this.state.gameDate}>Bet on me!</Link></td>
-        </tr>
-      </tbody>
-      </table>
+      <div className="game-card">
+        <span>{this.state.awayTeam.fullName} at {this.state.homeTeam.fullName}</span>
+        <Link className="link-bet" to={"/tournament?home=" + this.state.homeTeam.teamCode + "&away=" + this.state.awayTeam.teamCode + "&date=" + this.state.gameDate}>Bet on me!</Link>
+      </div>
     )
   }
 }

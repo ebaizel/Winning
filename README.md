@@ -17,3 +17,7 @@ node bridge -a -9 -H 127.0.0.1 -p 8545 --dev
 ```
 
 Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.
+
+## Notes
+
+Ideally we'd listen to emitted contract `events` and update the UI when certain events trigger.  However, Metamask doesn't currently support subscribing to events https://github.com/MetaMask/metamask-extension/issues/2350

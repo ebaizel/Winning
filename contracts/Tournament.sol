@@ -10,9 +10,6 @@ contract Tournament is usingOraclize {
   event LogNewOraclizeQuery(string description);
   event TeamSelected(address picker, string message);
 
-  // This is ~$10 when ETH is ~$450 USD.
-  //uint constant WAGER_AMOUNT_WEI = 25000000000000000;
-
   address owner;
   string oracleURL;
 
@@ -29,8 +26,9 @@ contract Tournament is usingOraclize {
   uint public homeTeamScore;  // home team points
   uint public awayTeamScore;  // away team points
 
-  string public homeTeamName; // can set these as events to reduce storage and save $$
-  string public awayTeamName;
+  string public homeTeamCode; // TODO: set these as events to reduce storage and save $$
+  string public awayTeamCode;
+  uint public gameDate;
 
   modifier onlyOwner() {
     require(msg.sender == owner, "User is not the contract owner.");
@@ -47,7 +45,7 @@ contract Tournament is usingOraclize {
     _;
   }
 
-  constructor(string _url, bool isHome, string _homeTeamName, string _awayTeamName) payable public {
+  constructor(string _url, bool isHome, string _homeTeamCode, string _awayTeamCode, uint _gameDate) payable public {
     assert(bytes(_url).length > 0);
     assert(msg.value > 0);
 
@@ -60,8 +58,9 @@ contract Tournament is usingOraclize {
     _logEntry(isHome);
     wagerAmount = msg.value;
 
-    homeTeamName = _homeTeamName;
-    awayTeamName = _awayTeamName;
+    homeTeamCode = _homeTeamCode;
+    awayTeamCode = _awayTeamCode;
+    gameDate = _gameDate;
 
   }
 
@@ -104,6 +103,7 @@ contract Tournament is usingOraclize {
 
     // Parse the oraclize query results
     // https://medium.com/maibornwolff/a-json-parser-for-solidity-9cc73b4b42
+
     uint returnValue;
     JsmnSolLib.Token[] memory tokens;
     uint actualNum;

@@ -66,3 +66,40 @@ code {
   height: 16px;
   margin-right: 10px;
 }
+
+div.game-card {
+  margin-bottom: 1em;
+}
+
+.link-bet {
+  margin-left: 1em;
+}
+
+.games-list-header {
+  margin-bottom: 2em;
+}
+
+.button-bet {
+  margin-top: 1em;
+  margin-right: 20px;
+  padding: 10px;
+  background-color: aliceblue;
+}
+
+.wager {
+  margin: 5px;
+}
+
+.check-for-winner {
+  background-color: green;
+  color: white;
+  margin-bottom: 2em;
+}
+
+.share-tournament-text {
+  color: red;
+}
+
+.share-tournament-url {
+  color: blue;
+}

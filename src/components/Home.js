@@ -26,17 +26,20 @@ class Home extends React.Component {
         <main className="container">
           <div className="pure-g">
             <div className="pure-u-1-1">
-            <table><tbody>
-            {this.state.games.map(function(props, index) {
-              return(
-                <tr key={index}>
-                  <td>
-                    <GameCard {...props} key={index}/>
-                  </td>
-                </tr>)
-            })}
-            </tbody>
-            </table>
+            <div className="games-list-header">
+              <h2>Week 1 Games</h2>
+            </div>
+              <table><tbody>
+              {this.state.games.map(function(props, index) {
+                return(
+                  <tr key={index}>
+                    <td>
+                      <GameCard {...props} key={index}/>
+                    </td>
+                  </tr>)
+              })}
+              </tbody>
+              </table>
             </div>
           </div>
         </main>
