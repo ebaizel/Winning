@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
-import "installed_contracts/oraclize-api/contracts/usingOraclize.sol";
-import "installed_contracts/jsmnsol-lib/contracts/JsmnSolLib.sol";
+import "oraclize-api/contracts/usingOraclize.sol";
+import "jsmnsol-lib/contracts/JsmnSolLib.sol";
 
 contract Tournament is usingOraclize {
 
@@ -30,21 +30,34 @@ contract Tournament is usingOraclize {
   string public awayTeamCode;
   uint public gameDate;
 
+  /** @dev Ensures only this contract's owner can execute this call
+   */
   modifier onlyOwner() {
     require(msg.sender == owner, "User is not the contract owner.");
     _;
   }
 
+  /** @dev Ensures the current message contains enough value to cover the wager amount
+   */
   modifier hasSufficientFunds() {
     require(msg.value >= wagerAmount, "Insufficient funds sent.");
     _;
   }
 
+  /** @dev Ensures the winner has not already been paid
+   */
   modifier winnerUnpaid() {
     require(!isWinnerPaid, "Winner has already been paid.");
     _;
   }
 
+  /** @dev Instantiates the contract with a wager on one of the teams
+    * @param _url the Oraclize query url to be used to track this game's status
+    * @param isHome represents if the wager is on the home team (true) or away team (false)
+    * @param _homeTeamCode the home team's abbreviation code, eg 'DET' for Detroit
+    * @param _awayTeamCode the away team's abbreviation code
+    * @param _gameDate a Unix timestamp in seconds of the start time of the game, in EDT
+   */
   constructor(string _url, bool isHome, string _homeTeamCode, string _awayTeamCode, uint _gameDate) payable public {
     assert(bytes(_url).length > 0);
     assert(msg.value > 0);
@@ -64,6 +77,9 @@ contract Tournament is usingOraclize {
 
   }
 
+  /** @dev When a wager has been set, this updates the contract state to reflect it
+    * @param isHome represents if the wager is on the home team (true) or away team (false)
+   */
   function _logEntry(bool isHome) internal {
     if (isHome) {
       require(homePicker == address(0), "Home team has already been chosen.");
@@ -77,6 +93,9 @@ contract Tournament is usingOraclize {
     weiWeigered += msg.value;
   }
 
+  /** @dev Place a wager on one of the teams.
+    * @param isHome represents if the wager is on the home team (true) or away team (false)
+   */
   function submitEntry(bool isHome) public payable hasSufficientFunds {
     require(!isLocked, "Contract is locked.");
     _logEntry(isHome);
@@ -85,18 +104,21 @@ contract Tournament is usingOraclize {
     }
   }
 
-  // function withdraw() public {
-  //   require(isCompleted || (!isCompleted && !isLocked), "Contract is locked or has not yet completed.");
-  //   uint winnings = address(this).balance;
-  //   msg.sender.transfer(winnings);
-  //   emit PaidWinner(msg.sender, winnings);
-  // }
-
+  /** @dev Simple helper to compare strings
+    * @param a first string to compare
+    * @param b second string to compare
+    * @return true if the strings match; otherwise, false
+   */
   function compareStrings (string a, string b) internal pure returns (bool){
     return keccak256(a) == keccak256(b);
   }
 
-  function __callback(bytes32 myid, string result) winnerUnpaid public {
+  /** @dev The callback that Oraclize calls with the query result.
+    * Winners are paid out if the game has ended.
+    * @param myid unique identifier of this callback
+    * @param result a string representation of the JSON response
+   */
+  function __callback(bytes32 myid, string result) public winnerUnpaid {
     if (msg.sender != oraclize_cbAddress()) revert();
 
     emit ReceivedOraclizeResult(result);
@@ -161,13 +183,34 @@ contract Tournament is usingOraclize {
     isWinnerPaid = true;
   }
 
+  /** @dev Queries the oracle for this contest's result
+   */
   function updateResults() public onlyOwner winnerUnpaid {
     if (oraclize_getPrice("URL") > address(this).balance) {
       emit LogNewOraclizeQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
     } else {
       emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-      oraclize_query("URL", oracleURL, 150000);
+      oraclize_query("URL", oracleURL, 200000);
     }
+  }
+
+  /** @dev Terminates this contract and refunds any wagers that have been placed
+   */
+  function kill() public onlyOwner {
+    if (homePicker != address(0) && awayPicker != address(0)) {
+      uint payout = weiWeigered / 2;
+      awayPicker.transfer(payout);
+      homePicker.transfer(payout);
+      emit PaidWinner(awayPicker, payout);
+      emit PaidWinner(homePicker, payout);
+    } else if (homePicker != address(0)) {
+      homePicker.transfer(weiWeigered);
+      emit PaidWinner(homePicker, weiWeigered);
+    } else if (awayPicker != address(0)) {
+      awayPicker.transfer(weiWeigered);
+      emit PaidWinner(awayPicker, weiWeigered);
+    }
+    selfdestruct(owner);
   }
 
   function() public payable {}

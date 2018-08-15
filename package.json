@@ -2,6 +2,7 @@
   "name": "react-box",
   "version": "0.1.0",
   "private": true,
+  "homepage": "http://ebaizel.github.io/Winning",
   "devDependencies": {
     "autoprefixer": "6.5.1",
     "babel-core": "6.17.0",
@@ -52,12 +53,13 @@
     "dotenv": "^2.0.0",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",
-    "query-string": "^6.1.0",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
     "react-helmet": "^5.2.0",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
+    "stringquery": "^1.0.8",
+    "truffle-privatekey-provider": "^0.1.0",
     "web3": "^1.0.0-beta.35"
   },
   "scripts": {

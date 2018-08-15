@@ -1,6 +1,6 @@
 import React from 'react';
 import moment from 'moment-timezone';
-import queryString from 'query-string';
+import queryString from "stringquery";
 
 import TournamentContract from '../../build/contracts/Tournament.json';
 import getWeb3 from '../utils/getWeb3';
@@ -12,7 +12,7 @@ class Tournament extends React.Component {
     super(props);
 
     let tournamentAddress = props.match.params.tournamentAddress; // "0x03f5cbf1a881081683b4e116dc8a0a6d09bf294b",
-    const queryParams = queryString.parse(props.location.search);
+    const queryParams = queryString(props.location.search);
 
     this.state = {
       web3: null,
