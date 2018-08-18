@@ -1,6 +1,14 @@
+## This project is live at [https://ebaizel.github.com/Winning](https://ebaizel.github.com/Winning)
+
 ## Overview
 
-Welcome to the `Winning` project!  This project allows two people to wager on any NFL football game.  Participants bet on either the `home` or the `away` team, and when the game has completed, an oracle is used to determine the games outcome and subsequently the winner is paid.
+Welcome to the `Winning` project!  This project let two people to wager on any NFL football game.  Participants bet on either the `home` or the `away` team, and when the game has completed, an oracle is used to determine the games outcome and subsequently the winner is paid.  This project was built for the Consensys Academy final project.
+
+## EthPM
+The course suggested incorporating EthPM, and this project imports the [jsmnsol-lib](https://www.ethpm.com/registry/packages/26) package from EthPM.
+
+## Oraclize
+The course suggested incorporating an oracle, and this project utilizes [Oraclize](http://www.oraclize.it/).
 
 ## Cloning
 If you are cloning this repo, add this flag `git clone --recursive` so it pulls in the `ethereum-bridge` submodule.
@@ -24,7 +32,7 @@ Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.
 
 ## UX Notes
 
-When interfacing with Metamask to place a bet and check the results, you will need to manually refresh to see the results.  Ideally this would be automatic, eg, we'd listen to emitted contract `events` and update the UI when certain events trigger.  However, Metamask doesn't currently support subscribing to events https://github.com/MetaMask/metamask-extension/issues/2350
+When interfacing with Metamask to place a bet and check the results, you will need to manually refresh to see the results.  Ideally this would be automatic, eg, we'd listen to emitted contract `events` and update the UI when certain events trigger.  However, Metamask doesn't currently support [subscribing to events](https://github.com/MetaMask/metamask-extension/issues/2350).
 
 ## Test Networks
 
