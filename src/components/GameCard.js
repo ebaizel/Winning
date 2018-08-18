@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment-timezone';
 import Teams from "../lib/teams";
 import { Link } from 'react-router-dom';
 
@@ -7,7 +8,6 @@ class GameCard extends React.Component {
 
   constructor(props) {
     super(props);
-
     let homeTeam = Teams[props.homeTeamCode];
     let awayTeam = Teams[props.awayTeamCode];
 
@@ -21,7 +21,6 @@ class GameCard extends React.Component {
   }
 
   componentWillMount() {
-    //TODO lookup the status of the game from myapifeeds
     this.setState({
       gameStatus: "Not Started",
       gameResult: {
@@ -31,10 +30,15 @@ class GameCard extends React.Component {
     })
   }
 
+  formatGameDate(gameDate) {
+    return moment(gameDate).format("MMMM Do")
+  }
+
   render() {
     return( 
       <div className="game-card">
-        <span>{this.state.awayTeam.fullName} at {this.state.homeTeam.fullName}</span>
+        <span className="game-card-date">{this.formatGameDate(this.state.gameDate)}</span>
+        <span><b>{this.state.awayTeam.fullName}</b> at <b>{this.state.homeTeam.fullName}</b></span>
         <Link className="link-bet" to={"/tournament?home=" + this.state.homeTeam.teamCode + "&away=" + this.state.awayTeam.teamCode + "&date=" + this.state.gameDate}>Bet on me!</Link>
       </div>
     )

@@ -25,6 +25,7 @@ class Tournament extends React.Component {
       isLocked: false,
       isWinnerPaid: false,
       wagerUSD: 10,
+      ETHUSDPrice: 300, // will update on load
       mySportsFeedUser: "6f66a3d1-4b1e-4858-a1e6-6dd748",
       mySportsFeedPassword: "MYSPORTSFEEDS",
       awayScore: 0,
@@ -256,11 +257,11 @@ class Tournament extends React.Component {
               <h1>{this.state.awayTeam.fullName} (AWAY) at {this.state.homeTeam.fullName} (HOME)</h1>
               <h3>{moment(this.state.gameDate).format("MMMM Do, YYYY")}</h3>
               <br/>
-              <p>Set a wager amount.  Bet on one of the teams.  Send the resulting address to a friend.</p>
+              <p>Set a wager amount.  Bet on one of the teams.  Send the bet to a friend to bet on the other team.</p>
               
               <form>
                 <label>Wager (USD)
-                  <input className="wager" style={{width: "60px", "textAlign": "center"}} type="text" value={this.state.wagerUSD.toPrecision(4)} disabled={!this.canSetWager()} onChange={this.handleWagerChange}/><span>{this.getWagerInEth()} Ether</span>
+                  <input className="wager" style={{width: "60px", "textAlign": "center"}} type="text" value={this.state.wagerUSD} disabled={!this.canSetWager()} onChange={this.handleWagerChange}/><span>{this.getWagerInEth()} Ether</span>
                 </label>
                 <br/>
 
@@ -279,6 +280,16 @@ class Tournament extends React.Component {
                 ? <button className="check-for-winner" disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button>
                 : null
                 }
+                {/* <button className="check-for-winner" disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button> */}
+
+                {this.state.isLocked
+                  ? <p className="check-for-winner-text">Once the game has ended, come back and complete this wager.</p>
+                  : null
+                }
+                {/* {(!this.canCheckForWinner() && this.state.isLocked)
+                ? <p>When the game has completed, come back and check on the results.</p>
+                : null
+                } */}
 
                 {!!this.state.tournamentAddress
                 ? [<p key="0" className="share-tournament-text">Save this link! It's how you reference this wager.</p>,
@@ -289,9 +300,10 @@ class Tournament extends React.Component {
                 <br/><br/><br/>
 
                 <p><b>Instructions</b></p>
+                <p>You'll need to install <a href="https://metamask.io/">MetaMask</a> in order to play</p>
                 <p>If you're creating a new bet, make sure you keep the resulting url.  Share that with a friend.</p>
                 <p>If you're taking the other side of a bet, bet on the other team.</p>
-                <p>After the game has ended, a button will appear that validates the score and pays the winner.</p>
+                <p>After the game has ended, return to this page to complete the wager.  The smart contract will execute and automatically payout the winner.</p>
                 <br/><br/><br/>
 
                 <p>Contract Info</p>

@@ -19,7 +19,7 @@ code {
 .container {
   box-sizing: border-box;
   width: 100%;
-  padding: 45px 20px;
+  padding: 25px 20px;
 }
 
 .pure-button-primary {
@@ -73,6 +73,7 @@ div.game-card {
 
 .link-bet {
   margin-left: 1em;
+  font-weight: bold;
 }
 
 .games-list-header {
@@ -94,6 +95,7 @@ div.game-card {
   background-color: green;
   color: white;
   margin-bottom: 2em;
+  margin-right: 20px;
 }
 
 .share-tournament-text {
@@ -102,4 +104,25 @@ div.game-card {
 
 .share-tournament-url {
   color: blue;
+}
+
+.check-for-winner-text {
+  font-weight: bold;
+  margin-bottom: 2em;
+}
+
+.site-header {
+  margin-bottom: 20px;
+}
+
+.instructions {
+  margin-bottom: 50px;
+}
+
+.game-card-date {
+  margin-right: 15px;
+}
+
+.week-number {
+  margin-bottom: 20px;
 }

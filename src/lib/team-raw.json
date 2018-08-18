@@ -126,6 +126,13 @@
     "div": "West"
   },
   {
+    "city": "Los Angeles",
+    "name": "Rams",
+    "abr": "LA",
+    "conf": "NFC",
+    "div": "West"
+  },
+  {
       "city": "Miami",
       "name": "Dolphins",
       "abr": "MIA",
