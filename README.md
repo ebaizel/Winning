@@ -30,9 +30,3 @@ Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.
 ## UX Notes
 
 When interfacing with Metamask to place a bet and check the results, you will need to manually refresh to see the results.  Ideally this would be automatic, eg, we'd listen to emitted contract `events` and update the UI when certain events trigger.  However, Metamask doesn't currently support [subscribing to events](https://github.com/MetaMask/metamask-extension/issues/2350).
-
-## Test Networks
-
-This contract was run on the Rinkeby test network.  Here is the relevant info related to that:
-
-* the contract creation transaction - https://rinkeby.etherscan.io/address/0x3cc8b1073fded49cbe50a7866c37e9f179f5a0a4

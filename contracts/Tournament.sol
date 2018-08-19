@@ -62,9 +62,8 @@ contract Tournament is usingOraclize {
     assert(bytes(_url).length > 0);
     assert(msg.value > 0);
 
-    // READ: When running tests or running locally, deploy ethereum bridge
-    // and set the OAR here
-    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+    // READ: When running tests or running locally, deploy ethereum-bridge and set the OAR here; otw comment
+    // OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     owner = msg.sender;
     oracleURL = _url;
 
