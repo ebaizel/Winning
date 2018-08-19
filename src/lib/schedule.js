@@ -23,8 +23,8 @@ function getGamesByWeek(weekNumber) {
 
 function getGames(startDate, endDate) {
   if (startDate === undefined) {
-    //TODO: return today's
-    const defaultDate = "2018-09-09"
+    // return today's games
+    const defaultDate = moment();
     return getGamesForDate(moment(defaultDate).tz("America/New_York").format("YYYY-MM-DD"));
   }
   if (endDate === undefined) {

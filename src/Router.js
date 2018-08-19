@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { HashRouter, Route, Switch } from 'react-router-dom';
 import Tournament from './components/Tournament';
 import Home from './components/Home';
 
 const Routing = () => (
-  <BrowserRouter>
+  <HashRouter>
   <div>
     <Switch>
       <Route path="/tournament/:tournamentAddress" component={Tournament}/>
@@ -12,6 +12,6 @@ const Routing = () => (
       <Route path="/" component={Home}/>
     </Switch>
   </div>
-  </BrowserRouter>
+  </HashRouter>
 )
 export default Routing  

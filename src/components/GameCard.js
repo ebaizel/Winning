@@ -3,7 +3,6 @@ import moment from 'moment-timezone';
 import Teams from "../lib/teams";
 import { Link } from 'react-router-dom';
 
-// This renders a game passed in as "DET-GB"
 class GameCard extends React.Component {
 
   constructor(props) {

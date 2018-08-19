@@ -31,7 +31,8 @@ class Tournament extends React.Component {
       awayScore: 0,
       homeScore: 0,
       awayTeam: {},
-      homeTeam: {}
+      homeTeam: {},
+      season: null
     }
 
     this.checkForWinner = this.checkForWinner.bind(this);
@@ -39,29 +40,24 @@ class Tournament extends React.Component {
     this.handleWagerChange = this.handleWagerChange.bind(this);
   }
 
-  generateMySportsFeedURLWithoutCreds(homeTeam, gameDate) {
-    let myapiURL = "https://api.mysportsfeeds.com/v2.0/pull/nfl/2018-2019-regular/games.json?team=__team__&date=__date__";
+  generateMySportsFeedURLWithoutCreds(homeTeam, gameDate, season) {
+    let myapiURL = "https://api.mysportsfeeds.com/v2.0/pull/nfl/__season__/games.json?team=__team__&date=__date__";
     gameDate = gameDate.replace(/-/g, ''); //convert 2018-09-10 to 20180910
-    myapiURL = myapiURL.replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate);
-    
-    //myapiURL = "https://api.mysportsfeeds.com/v2.0/pull/nfl/2017-2018-regular/games.json?team=det&date=20171231";
+    myapiURL = myapiURL.replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate).replace("__season__", season);
     return myapiURL;
   }
 
-  generateMySportsFeedURL(homeTeam, gameDate) {
-    let myapiURL = "https://__username__:__password__@api.mysportsfeeds.com/v2.0/pull/nfl/2018-2019-regular/games.json?team=__team__&date=__date__";
+  generateMySportsFeedURL(homeTeam, gameDate, season) {
+    let myapiURL = "https://__username__:__password__@api.mysportsfeeds.com/v2.0/pull/nfl/__season__/games.json?team=__team__&date=__date__";
     gameDate = gameDate.replace(/-/g, ''); //convert 2018-09-10 to 20180910
-    myapiURL = myapiURL.replace("__username__", this.state.mySportsFeedUser).replace("__password__",this.state.mySportsFeedPassword).replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate);
+    myapiURL = myapiURL.replace("__username__", this.state.mySportsFeedUser).replace("__password__",this.state.mySportsFeedPassword).replace("__team__", homeTeam.teamCode.toLowerCase()).replace("__date__", gameDate).replace("__season__", season);
     return myapiURL;
   }
 
   generateOracleURL() {
-    let mySportsFeedURL = this.generateMySportsFeedURL(this.state.homeTeam, this.state.gameDate);
+    let mySportsFeedURL = this.generateMySportsFeedURL(this.state.homeTeam, this.state.gameDate, this.state.season);
     let oracleURL = "json(__mysportsfeedurl__).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]";
     oracleURL = oracleURL.replace("__mysportsfeedurl__", mySportsFeedURL);
-
-    // const testURL = "json(https://6f66a3d1-4b1e-4858-a1e6-6dd748:MYSPORTSFEEDS@api.mysportsfeeds.com/v2.0/pull/nfl/2017-2018-regular/games.json?team=det&date=20171231).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]";
-    // return testURL;
     return oracleURL;
   }
 
@@ -84,6 +80,7 @@ class Tournament extends React.Component {
         const homeTeam = Teams[queryParams.home];
         const awayTeam = Teams[queryParams.away];
         const gameDate = queryParams.date;
+        const season = queryParams.season || "2018-2019-regular";
 
         await this.getRealWorldGameState(homeTeam, gameDate);
 
@@ -91,6 +88,7 @@ class Tournament extends React.Component {
           homeTeam,
           awayTeam,
           gameDate,
+          season
         });
       }
     })
@@ -99,12 +97,21 @@ class Tournament extends React.Component {
     })
   }
 
+  /**
+    * For testing/demo purposes, we set the season to 2017 so we can run through a completed game
+    */
+  getSeason(homeTeam, gameDate) {
+    if ( ((homeTeam.teamCode === "det") || (homeTeam.teamCode === "DET"))  && (gameDate === "2017-12-31")) {
+      return("2017-2018-regular");
+    }
+    return("2018-2019-regular");
+  }
+
   async getRealWorldGameState(homeTeam, gameDate) {
-    const mySportsFeedURL = this.generateMySportsFeedURLWithoutCreds(homeTeam, gameDate);
-    // const mySportsFeedURL = this.generateMySportsFeedURLWithoutCreds({teamCode:"det"}, "20171231");
+    const season = this.getSeason(homeTeam, gameDate);
+    const mySportsFeedURL = this.generateMySportsFeedURLWithoutCreds(homeTeam, gameDate, season);
     let headers = new Headers();
     headers.append('Authorization', 'Basic ' + btoa(this.state.mySportsFeedUser + ':' + this.state.mySportsFeedPassword));
-    
     return fetch(mySportsFeedURL, {headers: headers}).then(response => {
       return response.json()
     }).then(body => {
@@ -181,6 +188,7 @@ class Tournament extends React.Component {
 
   async submitPick(isHome) {
     const wagerInWei = this.getWagerInWei();
+    this.setState({pickSubmissionPending: true});
     if (this.state.tournamentAddress == null) {
       await this.createTournament({isHome, wager: wagerInWei});
       this.props.history.push("/tournament/" + this.state.tournamentAddress);
@@ -241,7 +249,7 @@ class Tournament extends React.Component {
   }
 
   getTournamentShareURL() {
-    return window.location.protocol + "//" + window.location.host + "/tournament/" + this.state.tournamentAddress;
+    return window.location.protocol + "//" + window.location.host + "/#/tournament/" + this.state.tournamentAddress;
   }
 
   render() {
@@ -274,22 +282,22 @@ class Tournament extends React.Component {
                 ? <button className="button-bet" disabled={!this.isHomePickAvailable()} onClick={(e) => {e.preventDefault(); this.submitPick(true)}}>Bet on the {this.state.homeTeam.fullName}</button>
                 : null
                 }
-                <br/><br/><br/>
+                <br/>
+                {this.state.pickSubmissionPending
+                ? <p className="share-tournament-text">Pick submittal is pending...this can take up to a couple minutes.</p>
+                : null
+                }
+                <br/><br/>
 
                 {this.canCheckForWinner()
                 ? <button className="check-for-winner" disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button>
                 : null
                 }
-                {/* <button className="check-for-winner" disabled={!this.canCheckForWinner()} onClick={this.checkForWinner}>Check For Winner</button> */}
 
                 {this.state.isLocked
                   ? <p className="check-for-winner-text">Once the game has ended, come back and complete this wager.</p>
                   : null
                 }
-                {/* {(!this.canCheckForWinner() && this.state.isLocked)
-                ? <p>When the game has completed, come back and check on the results.</p>
-                : null
-                } */}
 
                 {!!this.state.tournamentAddress
                 ? [<p key="0" className="share-tournament-text">Save this link! It's how you reference this wager.</p>,

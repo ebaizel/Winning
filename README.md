@@ -4,11 +4,8 @@
 
 Welcome to the `Winning` project!  This project let two people to wager on any NFL football game.  Participants bet on either the `home` or the `away` team, and when the game has completed, an oracle is used to determine the games outcome and subsequently the winner is paid.  This project was built for the Consensys Academy final project.
 
-## EthPM
-The course suggested incorporating EthPM, and this project imports the [jsmnsol-lib](https://www.ethpm.com/registry/packages/26) package from EthPM.
-
-## Oraclize
-The course suggested incorporating an oracle, and this project utilizes [Oraclize](http://www.oraclize.it/).
+## Course Notes
+Please refer to [these notes](./course_notes.md) for items specific to the Consensys Academy final project guidelines.
 
 ## Cloning
 If you are cloning this repo, add this flag `git clone --recursive` so it pulls in the `ethereum-bridge` submodule.
