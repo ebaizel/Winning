@@ -31,8 +31,7 @@ class Tournament extends React.Component {
       awayScore: 0,
       homeScore: 0,
       awayTeam: {},
-      homeTeam: {},
-      season: null
+      homeTeam: {}
     }
 
     this.checkForWinner = this.checkForWinner.bind(this);
@@ -55,7 +54,8 @@ class Tournament extends React.Component {
   }
 
   generateOracleURL() {
-    let mySportsFeedURL = this.generateMySportsFeedURL(this.state.homeTeam, this.state.gameDate, this.state.season);
+    const season = this.getSeason(this.state.homeTeam, this.state.gameDate);
+    let mySportsFeedURL = this.generateMySportsFeedURL(this.state.homeTeam, this.state.gameDate, season);
     let oracleURL = "json(__mysportsfeedurl__).games[0].score[currentIntermission, currentQuarter, awayScoreTotal, homeScoreTotal]";
     oracleURL = oracleURL.replace("__mysportsfeedurl__", mySportsFeedURL);
     return oracleURL;
@@ -80,15 +80,13 @@ class Tournament extends React.Component {
         const homeTeam = Teams[queryParams.home];
         const awayTeam = Teams[queryParams.away];
         const gameDate = queryParams.date;
-        const season = queryParams.season || "2018-2019-regular";
 
         await this.getRealWorldGameState(homeTeam, gameDate);
 
         this.setState({
           homeTeam,
           awayTeam,
-          gameDate,
-          season
+          gameDate
         });
       }
     })
@@ -249,7 +247,7 @@ class Tournament extends React.Component {
   }
 
   getTournamentShareURL() {
-    return window.location.protocol + "//" + window.location.host + "/#/tournament/" + this.state.tournamentAddress;
+    return window.location.protocol + "//" + window.location.host + "/Winning/#/tournament/" + this.state.tournamentAddress;
   }
 
   render() {
