@@ -20,7 +20,7 @@ class Home extends React.Component {
     return (
       <div className="App">
         <nav className="navbar pure-menu pure-menu-horizontal">
-            <a href="#" className="pure-menu-heading pure-menu-link">NFL Weiger</a>
+          <h4 className="site-menu">NFL Weiger</h4>
         </nav>
 
         <main className="container">
