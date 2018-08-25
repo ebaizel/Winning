@@ -10,7 +10,9 @@ Please refer to [these notes](./course_notes.md) for items specific to the Conse
 ## Cloning
 If you are cloning this repo, add this flag `git clone --recursive` so it pulls in the `ethereum-bridge` submodule.
 
-## Running Oraclize
+## Testing and Running Locally
+
+### Running Oraclize
 
 Oraclize is already deployed on the mainnet and test networks.  However, when running and testing locally, you need to deploy it to your local blockchain (ganache).  To do this:
 
@@ -25,7 +27,13 @@ cd ethereum-bridge
 node bridge -a -9 -H 127.0.0.1 -p 8545 --dev
 ```
 
-Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.
+**Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.**
+
+### Running the Tests
+
+```
+truffle test
+```
 
 ## UX Notes
 
