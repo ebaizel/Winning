@@ -252,13 +252,10 @@ class Tournament extends React.Component {
   getTournamentShareURL() {
     let host = window.location.host;
     let shareURL =  window.location.protocol + "//" + host;
-    console.log("shareURL 1 is ", shareURL);
     if (host === GITHUB_PAGE_HOST) {
       shareURL += "/Winning";
     }
-    console.log("shareURL 2 is ", shareURL);
     shareURL += "/#/tournament/" + this.state.tournamentAddress;
-    console.log("shareURL 3 is ", shareURL);
     return shareURL;
   }
 
