@@ -7,6 +7,8 @@ import getWeb3 from '../utils/getWeb3';
 import Teams from "../lib/teams";
 import getCoinPrice from "../lib/coinPrice";
 
+const GITHUB_PAGE_URL = "https://ebaizel.github.com/Winning";
+
 class Tournament extends React.Component {
   constructor(props) {
     super(props);
@@ -61,7 +63,9 @@ class Tournament extends React.Component {
     return oracleURL;
   }
 
-  componentWillMount() {  
+  componentWillMount() {
+    console.log("in will mount");
+    this.getTournamentShareURL()
     getWeb3.then(async results => {
 
       const ETHUSDPrice = await getCoinPrice();
@@ -247,6 +251,8 @@ class Tournament extends React.Component {
   }
 
   getTournamentShareURL() {
+    console.log("window.location.host is ", window.location.host);
+    console.log("window.location.path is ", window.location.path);
     return window.location.protocol + "//" + window.location.host + "/Winning/#/tournament/" + this.state.tournamentAddress;
   }
 
