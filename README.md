@@ -24,7 +24,7 @@ ganache-cli
 In another window, start the bridge from ganache to Oraclize:
 ```
 cd ethereum-bridge
-node bridge -a -9 -H 127.0.0.1 -p 8545 --dev
+node bridge -a 9 -H 127.0.0.1 -p 8545 --dev
 ```
 
 **Take the outputted `OAR` value and add it to the `Tournament.sol` constructor.**
