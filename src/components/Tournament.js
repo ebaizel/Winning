@@ -7,7 +7,7 @@ import getWeb3 from '../utils/getWeb3';
 import Teams from "../lib/teams";
 import getCoinPrice from "../lib/coinPrice";
 
-const GITHUB_PAGE_URL = "https://ebaizel.github.com/Winning";
+const GITHUB_PAGE_HOST = "ebaizel.github.io";
 
 class Tournament extends React.Component {
   constructor(props) {
@@ -64,7 +64,6 @@ class Tournament extends React.Component {
   }
 
   componentWillMount() {
-    console.log("in will mount");
     this.getTournamentShareURL()
     getWeb3.then(async results => {
 
@@ -251,9 +250,16 @@ class Tournament extends React.Component {
   }
 
   getTournamentShareURL() {
-    console.log("window.location.host is ", window.location.host);
-    console.log("window.location.path is ", window.location.path);
-    return window.location.protocol + "//" + window.location.host + "/Winning/#/tournament/" + this.state.tournamentAddress;
+    let host = window.location.host;
+    let shareURL =  window.location.protocol + "//" + host;
+    console.log("shareURL 1 is ", shareURL);
+    if (host === GITHUB_PAGE_HOST) {
+      shareURL += "/Winning";
+    }
+    console.log("shareURL 2 is ", shareURL);
+    shareURL += "/#/tournament/" + this.state.tournamentAddress;
+    console.log("shareURL 3 is ", shareURL);
+    return shareURL;
   }
 
   render() {
