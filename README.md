@@ -1,4 +1,4 @@
-## This project is live at [https://ebaizel.github.com/Winning](https://ebaizel.github.com/Winning)
+## This project is live at [https://weiger.co](https://weiger.co)
 
 ## Overview
 
