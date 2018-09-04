@@ -1,4 +1,4 @@
-## This project is live at [https://weiger.co](https://weiger.co)
+## This project is live at [weiger.co](https://weiger.co)
 
 ## Overview
 
