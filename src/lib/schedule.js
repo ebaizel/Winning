@@ -35,11 +35,15 @@ function getGames(startDate, endDate) {
 }
 
 function init() {
+  const today = moment().tz("America/New_York");
   gamesJSON.map(game => {
+    let startTime = game.schedule.startTime;
+    if (today.isAfter(startTime)) {
+      return null;
+    }
+    let week = game.schedule.week;
     let awayTeamCode = game.schedule.awayTeam.abbreviation;
     let homeTeamCode = game.schedule.homeTeam.abbreviation;
-    let startTime = game.schedule.startTime;
-    let week = game.schedule.week;
     startTime = moment(startTime).tz("America/New_York").format("YYYY-MM-DD"); // CONVERT TO EST
     games[startTime] = games[startTime] || [];
     gamesByWeek[week] = gamesByWeek[week] || {firstGameDate: startTime, games: []};
