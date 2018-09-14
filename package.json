@@ -1,7 +1,6 @@
 {
   "name": "react-box",
   "version": "0.1.0",
-  "homepage": "https://ebaizel.github.io/Winning/",
   "private": true,
   "devDependencies": {
     "autoprefixer": "6.5.1",
