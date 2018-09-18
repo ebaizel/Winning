@@ -8,12 +8,13 @@ import Teams from "../lib/teams";
 import getCoinPrice from "../lib/coinPrice";
 
 const GITHUB_PAGE_HOST = "ebaizel.github.io";
+const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 class Tournament extends React.Component {
   constructor(props) {
     super(props);
 
-    let tournamentAddress = props.match.params.tournamentAddress; // "0x03f5cbf1a881081683b4e116dc8a0a6d09bf294b",
+    let tournamentAddress = props.match.params.tournamentAddress;
     const queryParams = queryString(props.location.search);
 
     this.state = {
@@ -21,8 +22,8 @@ class Tournament extends React.Component {
       tournamentAddress: tournamentAddress,
       queryParams: queryParams,
       tournamentInstance: null, //TODO: can probably remove this
-      homePicker: "0x0000000000000000000000000000000000000000",
-      awayPicker: "0x0000000000000000000000000000000000000000",
+      homePicker: EMPTY_ADDRESS,
+      awayPicker: EMPTY_ADDRESS,
       isCompleted: false,
       isLocked: false,
       isWinnerPaid: false,
@@ -154,6 +155,7 @@ class Tournament extends React.Component {
     const homeTeamCode = await tournamentInstance.methods.homeTeamCode().call();
     const awayTeamCode = await tournamentInstance.methods.awayTeamCode().call();
     const gameDateTimestamp = await tournamentInstance.methods.gameDate().call();
+    await this.watchEvents();
 
     let stateParams = {
       homePicker,
@@ -171,6 +173,38 @@ class Tournament extends React.Component {
     this.setState(stateParams);
   }
 
+  async watchEvents() {
+    const contract = require('truffle-contract');
+    const tournament = contract(TournamentContract);
+    tournament.setProvider(this.state.web3.currentProvider);
+
+    let instance = await tournament.at(this.state.tournamentAddress);
+
+    let TeamSelectedEvent = instance.TeamSelected({});
+    TeamSelectedEvent.watch((err, result) => {
+      const eventArgs = result.args;
+      let updateArgs = {};
+      if (eventArgs.message === "Away") {
+        updateArgs = this.state.homePicker !== EMPTY_ADDRESS ? {awayPicker: eventArgs.picker, isLocked: true}: {awayPicker: eventArgs.picker};
+        if (this.state.pickSubmissionPending && !this.state.pickSubmissionIsHome) {
+          updateArgs = Object.assign(updateArgs, {pickSubmissionPending: false});
+        }
+      } else {
+        updateArgs = this.state.awayPicker !== EMPTY_ADDRESS ? {homePicker: eventArgs.picker, isLocked: true}: {homePicker: eventArgs.picker};
+        if (this.state.pickSubmissionPending && this.state.pickSubmissionIsHome) {
+          updateArgs = Object.assign(updateArgs, {pickSubmissionPending: false});
+        }
+      }
+
+      this.setState(updateArgs);
+    });
+
+    let WinnerPaidEvent = instance.PaidWinner({});
+    WinnerPaidEvent.watch((err, result) => {
+      this.setState({isWinnerPaid: true});
+    });
+  }
+
   convertUnixTimestampToGameDate(gameDateTimestamp) {
     return moment.unix(gameDateTimestamp).tz("America/New_York").format("YYYY-MM-DD")
   }
@@ -184,12 +218,13 @@ class Tournament extends React.Component {
     const oracleURL = this.generateOracleURL();
     let instance = await tournament.new(oracleURL, params.isHome, this.state.homeTeam.teamCode, this.state.awayTeam.teamCode, moment(this.state.gameDate).format("X"), {from: account, value: params.wager});
     this.setState({tournamentAddress: instance.address});
+    await this.watchEvents();
     return instance;
   }
 
   async submitPick(isHome) {
     const wagerInWei = this.getWagerInWei();
-    this.setState({pickSubmissionPending: true});
+    this.setState({pickSubmissionPending: true, pickSubmissionIsHome: isHome});
     if (this.state.tournamentAddress == null) {
       await this.createTournament({isHome, wager: wagerInWei});
       this.props.history.push("/tournament/" + this.state.tournamentAddress);
@@ -301,8 +336,13 @@ class Tournament extends React.Component {
                 : null
                 }
 
-                {this.state.isLocked
+                {this.state.isLocked && !this.state.isWinnerPaid
                   ? <p className="check-for-winner-text">Once the game has ended, come back and complete this wager.</p>
+                  : null
+                }
+
+                {this.state.isWinnerPaid
+                  ? <p className="check-for-winner-text">This wager has completed and the winner has been paid.  Congrats!</p>
                   : null
                 }
 

@@ -4,7 +4,6 @@ import "jsmnsol-lib/contracts/JsmnSolLib.sol";
 
 contract Tournament is usingOraclize {
 
-  event SubmittedEntry(address entrant, string ipfsHash);
   event PaidWinner(address winner, uint amount);
   event ReceivedOraclizeResult(string result);
   event LogNewOraclizeQuery(string description);
