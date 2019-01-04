@@ -39,7 +39,8 @@ function init() {
   gamesJSON.map(game => {
     let startTime = game.schedule.startTime;
     if (today.isAfter(startTime)) {
-      return null;
+      // COMMENTED OUT SO WE CAN SEE THE FULL SET OF 2018 GAMES
+      // return null;
     }
     let week = game.schedule.week;
     let awayTeamCode = game.schedule.awayTeam.abbreviation;
